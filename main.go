@@ -8,51 +8,25 @@ import (
 	"net/http"
 )
 
-//  let api_key: &str = "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";
-//
-//    let url = format!(
-//        "https://api.github.com/users/${user_name}"
-//    );
-
-type ResponseData struct {
-	Results []interface{} `json:"results"`
-}
-
 type RepoData struct {
 	Name string `json:"name"`
 	Url  string `json:"html_url"`
 }
 
-func main() {
-	userName := "sponkurtus2"
-	url := fmt.Sprintf("https://api.github.com/users/%s", userName)
-
-	// var token = "Bearer" + "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"
-	token := "Bearer" + "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"
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		log.Println("Error", err)
-	}
-	req.Header.Add("Authorization", token)
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Println("Error on response: ", err)
-	}
-	defer resp.Body.Close()
-
-	_, err = io.ReadAll(resp.Body)
-	if err != nil {
-		log.Println("Error while reading", err)
-	}
-	// log.Println(string([]byte(body)))
-
-	list_repos(userName, token)
+type UserData struct {
+	UserName string `json:"login"`
+	Photo    string `json:"avatar_url"`
 }
 
-func list_repos(userName, token string) {
+func main() {
+	userName := "sponkurtus2"
+	token := "Bearer" + "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"
+
+	// listRepos(userName, token)
+	listUserProfile(userName, token)
+}
+
+func listRepos(userName, token string) {
 	url := fmt.Sprintf("https://api.github.com/users/%s/repos", userName)
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -86,4 +60,35 @@ func list_repos(userName, token string) {
 	}
 
 	log.Println(repos)
+}
+
+func listUserProfile(userName, token string) {
+	url := fmt.Sprintf("https://api.github.com/users/%s", userName)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Println("Error", err)
+	}
+
+	req.Header.Add("Authorization", token)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response: ", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Errror while reading: ", err)
+	}
+
+	var user UserData
+	if err := json.Unmarshal(body, &user); err != nil {
+		log.Println("Error when unmarshal json", err)
+		return
+	}
+
+	log.Println(user)
 }
