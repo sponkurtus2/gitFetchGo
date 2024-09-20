@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 type RepoData struct {
@@ -21,27 +22,29 @@ type UserData struct {
 	Photo    string `json:"avatar_url"`
 }
 
-// Escala de grises para mapear a caracteres ASCII
-var asciiChars = []string{"@", "#", "S", "%", "?", "*", "+", ";", ":", ",", "."}
-
 func main() {
-	userName := "sponkurtus2"
+	// userName := "sponkurtus2"
+	if len(os.Args) < 2 {
+		fmt.Println("Please introduce a valid name.")
+		os.Exit(1)
+	}
+	userName := os.Args[1]
 
-	// Colores básicos usando fatih/color
-	pink := color.New(color.FgHiMagenta)
+	// Styles with fatih/color
+	headerColor := color.New(color.FgHiMagenta).Add(color.Bold) // Header
+	labelColor := color.New(color.FgHiWhite)                    // Label
+	valueColor := color.New(color.FgHiCyan)                     // Values
 
-	// Ejemplo de salida estilizada
-	pink.Println("Hola, bienvenido a mi neofetch en Go!")
-	pink.Println("------------------------------")
+	listRepos(userName, labelColor, valueColor)
 
-	listRepos(userName)
-	// listUserProfile(userName, token)
-	downloadPhoto("https://avatars.githubusercontent.com/u/74841175?v=4")
-	imgToAscii("./userPhoto.jpg")
+	photoUrl := listUserProfile(userName, labelColor, valueColor)
+	downloadPhoto(photoUrl)
+	imgToAscii()
 
+	headerColor.Println(strings.Repeat("─", 40))
 }
 
-func listRepos(userName string) {
+func listRepos(userName string, labelColor, valueColor *color.Color) {
 	url := fmt.Sprintf("https://api.github.com/users/%s/repos", userName)
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -50,7 +53,6 @@ func listRepos(userName string) {
 	}
 
 	client := &http.Client{}
-
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Println("Error on response...", err)
@@ -69,26 +71,25 @@ func listRepos(userName string) {
 	}
 
 	if len(repos) > 3 {
+		// Only show the first 3 repos
 		repos = repos[:3]
 	}
 
-	// Definir colores usando fatih/color
-	nameColor := color.New(color.FgCyan).Add(color.Bold) // Nombre del repositorio
-	urlColor := color.New(color.FgYellow)                // URL del repositorio
-	separatorColor := color.New(color.FgMagenta)         // Separador para estética
-
+	// Show repos on terminal
+	labelColor.Println("Repositories:")
 	for i, repo := range repos {
-		nameColor.Printf("%d. Name -> %s\n", i+1, repo.Name)
-		urlColor.Printf("	URL -> %s\n", repo.Url)
+		labelColor.Printf("  %d. %s\n", i+1, "Name")
+		valueColor.Printf("     → %s\n", repo.Name)
+		labelColor.Printf("     %s\n", "URL")
+		valueColor.Printf("     → %s\n", repo.Url)
 
 		if i < len(repos)-1 {
-			separatorColor.Println("------------------------------")
+			labelColor.Println(strings.Repeat("─", 30))
 		}
 	}
-
 }
 
-func listUserProfile(userName string) {
+func listUserProfile(userName string, labelColor, valueColor *color.Color) string {
 	url := fmt.Sprintf("https://api.github.com/users/%s", userName)
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -105,24 +106,26 @@ func listUserProfile(userName string) {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Errror while reading: ", err)
+		log.Println("Error while reading: ", err)
 	}
 
 	var user UserData
 	if err := json.Unmarshal(body, &user); err != nil {
 		log.Println("Error when unmarshal json", err)
-		return
 	}
 
-	// Define colors
-	greenColor := color.New(color.FgGreen)
+	// Mostrar la información del usuario al estilo neofetch
+	labelColor.Println("User profile")
+	labelColor.Printf("  %s\n", "User")
+	valueColor.Printf("     → %s\n", user.UserName)
 
-	greenColor.Println(user.UserName, user.Photo)
+	// Retornar la URL de la foto
+	return user.Photo
 }
 
-func imgToAscii(photoFile string) {
-	// cmd := exec.Command("image2ascii -f userPhoto.jpg -w 35 -g 15")
-	cmd := exec.Command("image2ascii", "-f", photoFile, "-w", "35", "-g", "15")
+func imgToAscii() {
+	// Execute command to convert and print ascii img
+	cmd := exec.Command("image2ascii", "-f", "./userPhoto.jpg", "-w", "40", "-g", "20")
 
 	out, err := cmd.Output()
 	if err != nil {
@@ -130,26 +133,26 @@ func imgToAscii(photoFile string) {
 	}
 	fmt.Println(string(out))
 
+	// Deletes temp img
 	deletePhoto()
 }
 
 func downloadPhoto(photoUrl string) {
-
-	// Create temp file
+	// Crear archivo temporal
 	userPhotoFile, err := os.Create("userPhoto.jpg")
 	if err != nil {
 		log.Fatal("Couldn't create file image -> ", err)
 	}
 	defer userPhotoFile.Close()
 
-	// Get the photo data
+	// Descargar la imagen desde la URL
 	resp, err := http.Get(photoUrl)
 	if err != nil {
 		log.Fatal("Couldn't download image -> ", err)
 	}
 	defer resp.Body.Close()
 
-	// Write downloaded data into our file
+	// Escribir los datos descargados en nuestro archivo
 	_, err = io.Copy(userPhotoFile, resp.Body)
 	if err != nil {
 		log.Fatal("Error transfering photo data -> ", err)
