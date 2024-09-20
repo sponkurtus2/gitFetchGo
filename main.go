@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/fatih/color"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/fatih/color"
 )
 
 type RepoData struct {

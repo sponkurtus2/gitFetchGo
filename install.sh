@@ -1,9 +1,5 @@
 #!/bin/bash
 
-if [[ $EUID -ne 0 ]]; then
-	echo "This must be executed as root in order to install"
-	exit 1
-fi
 
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
 	echo "Installing on linux device"
@@ -28,15 +24,3 @@ else
 	echo "Error detecting os type"
 	exit 1
 fi
-
-# Install needed library
-echo "Downloading neccesary library..."
-go install github.com/qeesung/image2ascii@latest
-
-if [ $? -eq 0 ]; then
-	echo "Library installed succesfully"
-else
-	echo "Error installing library"
-	exit 1
-fi
-
