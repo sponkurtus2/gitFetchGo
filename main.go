@@ -126,7 +126,7 @@ func listUserProfile(userName string, labelColor, valueColor *color.Color) strin
 
 func imgToAscii() {
 	// Execute command to convert and print ascii img
-	cmd := exec.Command("image2ascii", "-f", "./userPhoto.jpg", "-w", "40", "-g", "20")
+	cmd := exec.Command("image2ascii", "-f", "./userPhoto.jpg", "-w", "50", "-g", "30")
 
 	out, err := cmd.Output()
 	if err != nil {
