@@ -1,6 +1,8 @@
 ## 📸 Screenshots
 
-![Screenshot](./images/usage.png)
+<img src="./images/usage.png" width="600" height="500" alt="Screenshot">
+
+
 
 ## 🛠 What is this?
 
