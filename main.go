@@ -24,29 +24,60 @@ type UserData struct {
 }
 
 func main() {
-	// userName := "sponkurtus2"
 	if len(os.Args) < 2 {
-		fmt.Println("Please introduce a valid name.")
+		color.Red("Please introduce a valid GitHub username.")
 		os.Exit(1)
 	}
 	userName := os.Args[1]
 
 	// Styles with fatih/color
-	headerColor := color.New(color.FgHiMagenta).Add(color.Bold) // Header
-	labelColor := color.New(color.FgHiWhite)                    // Label
-	valueColor := color.New(color.FgHiCyan)                     // Values
+	titleColor := color.New(color.FgHiMagenta).Add(color.Bold)
+	labelColor := color.New(color.FgHiBlue)
+	valueColor := color.New(color.FgHiWhite)
 
-	listRepos(userName, labelColor, valueColor)
+	// Create channels for coordination
+	photoUrlChan := make(chan string)
+	doneChan := make(chan bool)
 
-	photoUrl := listUserProfile(userName, labelColor, valueColor)
-	downloadPhoto(photoUrl)
+	// Start concurrent operations
+	go func() {
+		photoUrl := listUserProfile(userName, titleColor, labelColor, valueColor)
+		photoUrlChan <- photoUrl
+	}()
+
+	go func() {
+		listRepos(userName, labelColor, valueColor)
+		doneChan <- true
+	}()
+
+	// Print ASCII art first (if exists from previous run)
+	fmt.Print("\n")
 	imgToAscii()
 
-	headerColor.Println(strings.Repeat("─", 40))
+	// Wait for user profile
+	photoUrl := <-photoUrlChan
+
+	// Wait for repos to complete
+	<-doneChan
+	fmt.Print("\n")
+
+	// Create a channel for image processing
+	imgDoneChan := make(chan bool)
+
+	// Download and process image concurrently
+	go func() {
+		downloadPhoto(photoUrl)
+		imgToAscii()
+		imgDoneChan <- true
+	}()
+
+	// Wait for image processing to complete
+	<-imgDoneChan
+	deletePhoto()
 }
 
 func listRepos(userName string, labelColor, valueColor *color.Color) {
-	url := fmt.Sprintf("https://api.github.com/users/%s/repos", userName)
+	url := fmt.Sprintf("https://api.github.com/users/%s/repos?per_page=3", userName)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -71,26 +102,22 @@ func listRepos(userName string, labelColor, valueColor *color.Color) {
 		return
 	}
 
-	if len(repos) > 3 {
-		// Only show the first 3 repos
-		repos = repos[:3]
-	}
+	icon := color.HiYellowString("󰊢")
+	labelColor.Printf(" %s ", icon)
+	labelColor.Print(color.HiBlueString("repos"))
+	valueColor.Print("  ")
 
-	// Show repos on terminal
-	labelColor.Println("Repositories:")
 	for i, repo := range repos {
-		labelColor.Printf("  %d. %s\n", i+1, "Name")
-		valueColor.Printf("     → %s\n", repo.Name)
-		labelColor.Printf("     %s\n", "URL")
-		valueColor.Printf("     → %s\n", repo.Url)
-
-		if i < len(repos)-1 {
-			labelColor.Println(strings.Repeat("─", 30))
+		if i == 0 {
+			color.HiWhite(repo.Name)
+		} else {
+			valueColor.Printf(" • %s", color.HiWhiteString(repo.Name))
 		}
 	}
+	fmt.Print("\n")
 }
 
-func listUserProfile(userName string, labelColor, valueColor *color.Color) string {
+func listUserProfile(userName string, titleColor, labelColor, valueColor *color.Color) string {
 	url := fmt.Sprintf("https://api.github.com/users/%s", userName)
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -115,54 +142,49 @@ func listUserProfile(userName string, labelColor, valueColor *color.Color) strin
 		log.Println("Error when unmarshal json", err)
 	}
 
-	// Mostrar la información del usuario al estilo neofetch
-	labelColor.Println("User profile")
-	labelColor.Printf("  %s\n", "User")
-	valueColor.Printf("     → %s\n", user.UserName)
+	// Print username as title
+	titleColor.Printf("\n  %s\n", strings.ToUpper(user.UserName))
+	titleColor.Printf("  %s\n", strings.Repeat("─", len(user.UserName)))
 
-	// Retornar la URL de la foto
 	return user.Photo
 }
 
 func imgToAscii() {
-	// Execute command to convert and print ascii img
-	cmd := exec.Command("image2ascii", "-f", "./userPhoto.jpg", "-w", "50", "-g", "30")
-
+	cmd := exec.Command("image2ascii", "-f", "./userPhoto.jpg", "-w", "35", "-g", "20")
 	out, err := cmd.Output()
 	if err != nil {
-		log.Fatal("Error doing the command -> ", err)
+		return
 	}
-	fmt.Println(string(out))
-
-	// Deletes temp img
-	deletePhoto()
+	color.HiCyan(string(out))
 }
 
 func downloadPhoto(photoUrl string) {
-	// Crear archivo temporal
+	// Create temporary file
 	userPhotoFile, err := os.Create("userPhoto.jpg")
 	if err != nil {
-		log.Fatal("Couldn't create file image -> ", err)
+		log.Printf("Couldn't create file image -> %v", err)
+		return
 	}
 	defer userPhotoFile.Close()
 
-	// Descargar la imagen desde la URL
+	// Download the image from URL
 	resp, err := http.Get(photoUrl)
 	if err != nil {
-		log.Fatal("Couldn't download image -> ", err)
+		log.Printf("Couldn't download image -> %v", err)
+		return
 	}
 	defer resp.Body.Close()
 
-	// Escribir los datos descargados en nuestro archivo
+	// Write downloaded data to file
 	_, err = io.Copy(userPhotoFile, resp.Body)
 	if err != nil {
-		log.Fatal("Error transfering photo data -> ", err)
+		log.Printf("Error transfering photo data -> %v", err)
+		return
 	}
 }
 
 func deletePhoto() {
-	file := os.Remove("./userPhoto.jpg")
-	if file != nil {
-		log.Fatal(file)
+	if err := os.Remove("./userPhoto.jpg"); err != nil && !os.IsNotExist(err) {
+		log.Printf("Error deleting photo: %v", err)
 	}
 }
