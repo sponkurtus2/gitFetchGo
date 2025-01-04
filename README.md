@@ -3,7 +3,6 @@
 <img src="./images/usage.png" width="600" height="500" alt="Screenshot">
 
 
-
 ## 🛠 What is this?
 
 GitFetchGo is a command-line tool that displays your Git repository information in a visually appealing way, similar to Neofetch. It shows details like branch status, recent commits, and repository statistics with ASCII art styling.
@@ -23,6 +22,11 @@ To run this project, you'll need:
   go get github.com/fatih/color
   go get github.com/qeesung/image2ascii
   ```
+
+## Support me 🤝
+
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/sponkurtus2)
+
 
 ## 📝 License
 
