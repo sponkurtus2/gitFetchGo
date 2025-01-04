@@ -29,13 +29,9 @@ To run this project, you'll need:
 ````bash
 $ git clone https://github.com/sponkurtus2/gitFetchGo.git
 ````
-* Build the binary
+* Use the installer
 ````bash
-$ go build
-````
-* Copy the binary
-````bash
-$ cp gitFetchGo /usr/local/bin/gitFetchGo 
+$ bash ./install.sh
 ````
 * Run
 ````bash
