@@ -23,6 +23,25 @@ To run this project, you'll need:
   go get github.com/qeesung/image2ascii
   ```
 
+### Installation
+
+* Clone the repo
+````bash
+$ git clone https://github.com/sponkurtus2/gitFetchGo.git
+````
+* Build the binary
+````bash
+$ go build
+````
+* Copy the binary
+````bash
+$ cp gitFetchGo /usr/local/bin/gitFetchGo 
+````
+* Run
+````bash
+$ gitFetchGo <github-username>
+````
+
 ## Support me 🤝
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/sponkurtus2)
