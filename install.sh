@@ -22,7 +22,7 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
 elif [[ "$OSTYPE" == "darwin"* ]]; then
 	echo "Installing on macOS..."
 	
-	file="./builds/gitFetchGo"
+	file="./builds/mac/gitFetchGo"
 	if [ ! -f "$file" ]; then
 		echo "Error: $file not found"
 		exit 1
